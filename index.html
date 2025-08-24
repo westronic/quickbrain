@@ -73,6 +73,15 @@
             font-weight: bold;
         }
     </style>
+    <script>
+    window.onload = function() {
+        var canvas = document.getElementById("myCanvas");
+        var context = canvas.getContext("2d");
+        context.moveTo(50, 150);
+        context.lineTo(250, 50);
+        context.stroke();
+    };
+    </script>
 </head>
 <body>
     <div class="container">
@@ -83,6 +92,8 @@
         </div>
 
         <p>This website is automatically updated using Python! Every time the script runs, this page gets regenerated with fresh content and pushed to GitHub Pages.</p>
+
+        <canvas id="myCanvas" width="300" height="200"></canvas>
 
         <div class="info-grid">
             <div class="info-card">
