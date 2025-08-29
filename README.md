@@ -1,2 +1,2 @@
 # quickbrain
-A customizable quiz game where speed and accuracy count.
+An artillery game that teaches projectile motion through quadratic equations.
