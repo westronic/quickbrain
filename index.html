@@ -59,40 +59,163 @@
             border-top: 1px solid #eee;
         }
         canvas {
-		border: 1px solid #000;
-        display: block;
-        margin-top: 10px;
-	    }
+    	border: 1px solid black;
+    	background-color: #f9f9f9;
+    	display: block;
+    	margin-top: 10px;
+  		}
+  		#controls {
+    	margin-bottom: 10px;
+  		}
     </style>
     <script>
-    window.onload = function() {
-        var canvas = document.getElementById("myCanvas");
-        var context = canvas.getContext("2d");
-        var input = document.getElementById("xCoord");
+window.onload = function() {
+  const canvas = document.getElementById("gameCanvas");
+  const ctx = canvas.getContext("2d");
+  const width = canvas.width;
+  const height = canvas.height;
 
-        function drawLine(x2) {
-            // Clear canvas
-            context.clearRect(0, 0, canvas.width, canvas.height);
+  const inputA = document.getElementById("aInput");
+  const inputB = document.getElementById("bInput");
+  const fireBtn = document.getElementById("fireBtn");
+  const message = document.getElementById("message");
 
-            // Draw line
-            context.beginPath();
-            context.moveTo(50, 150);      // First point
-            context.lineTo(x2, 50);       // Second point (x from input)
-            context.stroke();
+  let targetX = Math.floor(Math.random() * 6) + 4; // random between 4–9
+  let targetY = Math.floor(Math.random() * 4) + 2; // random between 2–5
+
+  const scale = 40; // pixels per unit
+
+  function drawGrid() {
+    ctx.clearRect(0,0,width,height);
+    ctx.strokeStyle = "#ddd";
+    for (let x = 0; x <= width; x += scale) {
+      ctx.beginPath();
+      ctx.moveTo(x,0);
+      ctx.lineTo(x,height);
+      ctx.stroke();
+    }
+    for (let y = 0; y <= height; y += scale) {
+      ctx.beginPath();
+      ctx.moveTo(0,y);
+      ctx.lineTo(width,y);
+      ctx.stroke();
+    }
+
+    // Axes
+    ctx.strokeStyle = "#000";
+    ctx.beginPath();
+    ctx.moveTo(0,height/2);
+    ctx.lineTo(width,height/2);
+    ctx.stroke();
+
+    ctx.beginPath();
+    ctx.moveTo(width/2,0);
+    ctx.lineTo(width/2,height);
+    ctx.stroke();
+  }
+
+  function toCanvasCoords(x, y) {
+    return [width/2 + x*scale, height/2 - y*scale];
+  }
+
+  function drawCannon() {
+    const [cx, cy] = toCanvasCoords(0,0);
+    ctx.fillStyle = "black";
+    ctx.beginPath();
+    ctx.arc(cx,cy,6,0,2*Math.PI);
+    ctx.fill();
+  }
+
+  function drawTarget() {
+    const [tx, ty] = toCanvasCoords(targetX, targetY);
+    ctx.fillStyle = "red";
+    ctx.beginPath();
+    ctx.arc(tx, ty, 8, 0, 2*Math.PI);
+    ctx.fill();
+  }
+
+  function drawEquation(a, b) {
+    ctx.fillStyle = "black";
+    ctx.font = "16px Arial";
+    ctx.fillText(`y = ${a}x² + ${b}x`, 10, 20);
+  }
+
+  function drawParabola(a, b) {
+    ctx.strokeStyle = "blue";
+    ctx.beginPath();
+    let [x0,y0] = toCanvasCoords(0,0);
+    ctx.moveTo(x0,y0);
+    for (let x=0; x<=10; x+=0.1) {
+      let y = a*x*x + b*x;
+      let [cx, cy] = toCanvasCoords(x,y);
+      ctx.lineTo(cx,cy);
+    }
+    ctx.stroke();
+  }
+
+  function animateProjectile(a, b) {
+    let t = 0;
+    let hit = false;
+
+    function step() {
+      drawScene(a,b);
+      let x = t;
+      let y = a*x*x + b*x;
+      let [cx, cy] = toCanvasCoords(x,y);
+
+      ctx.fillStyle = "green";
+      ctx.beginPath();
+      ctx.arc(cx,cy,5,0,2*Math.PI);
+      ctx.fill();
+
+      // hit check
+      if (Math.abs(x - targetX) < 0.3 && Math.abs(y - targetY) < 0.3) {
+        message.textContent = "Success!";
+        hit = true;
+        return;
+      }
+
+      if (y < -2 || x > 12) {
+        if (!hit) {
+          message.textContent = "Try again!";
         }
+        return;
+      }
 
-        // Draw the initial line
-        drawLine(parseInt(input.value, 10));
+      t += 0.1;
+      requestAnimationFrame(step);
+    }
 
-        // Update line whenever the input changes
-        input.addEventListener("input", function() {
-            var x2 = parseInt(input.value, 10);
-            if (!isNaN(x2)) {
-                drawLine(x2);
-            }
-        });
-    };
-	</script>
+    step();
+  }
+
+  function drawScene(a, b) {
+    drawGrid();
+    drawCannon();
+    drawTarget();
+    drawEquation(a,b);
+    drawParabola(a,b);
+  }
+
+  // Initial draw
+  drawScene(-0.1, 1);
+
+  fireBtn.onclick = function() {
+    let a = parseFloat(inputA.value);
+    let b = parseFloat(inputB.value);
+    if (isNaN(a) || isNaN(b)) {
+      message.textContent = "Enter valid numbers!";
+      return;
+    }
+    if (a >= 0 || b <= 0) {
+      message.textContent = "Remember: a < 0 and b > 0";
+      return;
+    }
+    message.textContent = "";
+    animateProjectile(a,b);
+  };
+};
+</script>
 </head>
 <body>
     <div class="container">
@@ -104,9 +227,13 @@
 
         <p>Welcome to QuickBrain!</p>
 
-        <canvas id="myCanvas" width="300" height="200"></canvas>
-		<label for="xCoord">X-coordinate:</label>
-		<input type="number" id="xCoord" value="250">
+        <div id="controls">
+  		<label>a: <input type="number" step="0.1" id="aInput" value="-0.1"></label>
+  		<label>b: <input type="number" step="0.1" id="bInput" value="1"></label>
+  		<button id="fireBtn">Fire!</button>
+  		<span id="message"></span>
+		</div>
+		<canvas id="gameCanvas" width="600" height="400"></canvas>
 
         <div class="info-grid">
             <div class="info-card">
