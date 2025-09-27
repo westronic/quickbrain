@@ -81,7 +81,6 @@ window.onload = function() {
   const inputA = document.getElementById("aInput");
   const inputB = document.getElementById("bInput");
   const fireBtn = document.getElementById("fireBtn");
-  const resetBtn = document.getElementById("resetBtn");
   const message = document.getElementById("message");
 
   const scoreSpan = document.getElementById("score");
@@ -117,7 +116,8 @@ window.onload = function() {
       ctx.lineTo(width,y);
       ctx.stroke();
     }
-    // Axes
+
+    // Axes (bottom-left origin)
     ctx.strokeStyle = "#000";
     ctx.beginPath();
     ctx.moveTo(0,4*height/5);
@@ -199,11 +199,11 @@ window.onload = function() {
       ctx.arc(cx,cy,5,0,2*Math.PI);
       ctx.fill();
 
-      // Calculate distance to target
+      // Distance to target
       const dist = Math.hypot(x - targetX, y - targetY);
       if (dist < closestDist) closestDist = dist;
 
-      // Check if inside target radius (approx 0.3 units)
+      // Hit check
       if (dist < 0.3) {
         message.textContent = "Success!";
         successes++;
@@ -211,10 +211,16 @@ window.onload = function() {
         hit = true;
 
         // Score: closer = higher
-        // 100 points if perfect, minimum 20 for edge hit
         let hitPoints = Math.max(20, Math.round(100 * (0.3 - dist) / 0.3));
         score += hitPoints;
         updateStats();
+
+        // Auto-reset after short delay
+        setTimeout(() => {
+          randomTarget();
+          message.textContent = "New target!";
+          drawScene(parseFloat(inputA.value), parseFloat(inputB.value));
+        }, 1500);
         return;
       }
 
@@ -249,12 +255,6 @@ window.onload = function() {
     animateProjectile(a,b);
   };
 
-  resetBtn.onclick = function() {
-    randomTarget();
-    message.textContent = "New target!";
-    drawScene(parseFloat(inputA.value), parseFloat(inputB.value));
-  };
-
   // Initialize game
   randomTarget();
   drawScene(-0.1, 1);
@@ -276,7 +276,6 @@ window.onload = function() {
 			<label>a: <input type="number" step="0.1" id="aInput" value="-0.1"></label>
  			<label>b: <input type="number" step="0.1" id="bInput" value="1"></label>
  	 		<button id="fireBtn">Fire!</button>
-  			<button id="resetBtn">Reset Target</button>
 	  		<span id="message"></span>
 		</div>
 
