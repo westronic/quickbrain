@@ -88,8 +88,8 @@ window.onload = function() {
   let successes = 0;
 
   function randomTarget() {
-    targetX = Math.floor(Math.random() * 6) + 4; // 4–9
-    targetY = Math.floor(Math.random() * 4) + 2; // 2–5
+    targetX = Math.floor(Math.random() * 14)/2 + 4; // 4–10.5
+    targetY = Math.floor(Math.random() * 12)/2 + 2; // 2–7.5
   }
 
   function drawGrid() {
@@ -151,7 +151,7 @@ window.onload = function() {
     ctx.beginPath();
     let [x0,y0] = toCanvasCoords(0,0);
     ctx.moveTo(x0,y0);
-    for (let x=0; x<=10; x+=0.1) {
+    for (let x=0; x<=12; x+=0.1) {
       let y = a*x*x + b*x;
       let [cx, cy] = toCanvasCoords(x,y);
       ctx.lineTo(cx,cy);
@@ -258,7 +258,7 @@ window.onload = function() {
         <h1>🧠 QuickBrain - Accuracy with Parabolas!</h1>
 
         <div id="controls">
-			<label>a: <input type="number" step="0.1" id="aInput" value="-0.1"></label>
+			<label>a: <input type="number" step="0.05" id="aInput" value="-0.10"></label>
  			<label>b: <input type="number" step="0.1" id="bInput" value="1"></label>
  	 		<button id="fireBtn">Fire!</button>
 	  		<span id="message"></span>
