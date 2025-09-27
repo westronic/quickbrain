@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>QuickBrain - Auto Updated</title>
+    <title>QuickBrain - Practice Your Accuracy with Parabolas!</title>
     <style>
         body {
             font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
@@ -64,6 +64,9 @@
     	display: block;
     	margin-top: 10px;
   		}
+		label {
+    	margin-right: 10px;
+  		}
   		#controls {
     	margin-bottom: 10px;
   		}
@@ -78,12 +81,26 @@ window.onload = function() {
   const inputA = document.getElementById("aInput");
   const inputB = document.getElementById("bInput");
   const fireBtn = document.getElementById("fireBtn");
+  const resetBtn = document.getElementById("resetBtn");
   const message = document.getElementById("message");
 
-  let targetX = Math.floor(Math.random() * 6) + 4; // random between 4–9
-  let targetY = Math.floor(Math.random() * 4) + 2; // random between 2–5
+  const scoreSpan = document.getElementById("score");
+  const triesSpan = document.getElementById("tries");
+  const successesSpan = document.getElementById("successes");
+  const rateSpan = document.getElementById("rate");
 
+  let targetX, targetY;
   const scale = 40; // pixels per unit
+
+  // Persistent stats (reset only on page refresh)
+  let score = 0;
+  let tries = 0;
+  let successes = 0;
+
+  function randomTarget() {
+    targetX = Math.floor(Math.random() * 6) + 4; // 4–9
+    targetY = Math.floor(Math.random() * 4) + 2; // 2–5
+  }
 
   function drawGrid() {
     ctx.clearRect(0,0,width,height);
@@ -100,22 +117,20 @@ window.onload = function() {
       ctx.lineTo(width,y);
       ctx.stroke();
     }
-
     // Axes
     ctx.strokeStyle = "#000";
     ctx.beginPath();
-    ctx.moveTo(0,4*height/5);
-    ctx.lineTo(width,4*height/5);
+    ctx.moveTo(0,height/2);
+    ctx.lineTo(width,height/2);
     ctx.stroke();
-
     ctx.beginPath();
-    ctx.moveTo(width/5,0);
-    ctx.lineTo(width/5,height);
+    ctx.moveTo(width/2,0);
+    ctx.lineTo(width/2,height);
     ctx.stroke();
   }
 
   function toCanvasCoords(x, y) {
-    return [width/5 + x*scale, 4*height/5 - y*scale];
+    return [width/2 + x*scale, height/2 - y*scale];
   }
 
   function drawCannon() {
@@ -153,9 +168,25 @@ window.onload = function() {
     ctx.stroke();
   }
 
+  function updateStats() {
+    triesSpan.textContent = tries;
+    successesSpan.textContent = successes;
+    rateSpan.textContent = tries > 0 ? Math.round((successes/tries)*100) + "%" : "0%";
+    scoreSpan.textContent = score;
+  }
+
+  function drawScene(a, b) {
+    drawGrid();
+    drawCannon();
+    drawTarget();
+    drawEquation(a,b);
+    drawParabola(a,b);
+  }
+
   function animateProjectile(a, b) {
     let t = 0;
     let hit = false;
+    let closestDist = Infinity;
 
     function step() {
       drawScene(a,b);
@@ -168,16 +199,31 @@ window.onload = function() {
       ctx.arc(cx,cy,5,0,2*Math.PI);
       ctx.fill();
 
-      // hit check
-      if (Math.abs(x - targetX) < 0.3 && Math.abs(y - targetY) < 0.3) {
+      // Calculate distance to target
+      const dist = Math.hypot(x - targetX, y - targetY);
+      if (dist < closestDist) closestDist = dist;
+
+      // Check if inside target radius (approx 0.3 units)
+      if (dist < 0.3) {
         message.textContent = "Success!";
+        successes++;
+        tries++;
         hit = true;
+
+        // Score: closer = higher
+        // 100 points if perfect, minimum 20 for edge hit
+        let hitPoints = Math.max(20, Math.round(100 * (0.3 - dist) / 0.3));
+        score += hitPoints;
+        updateStats();
         return;
       }
 
+      // Stop if projectile goes off-screen
       if (y < -2 || x > 12) {
         if (!hit) {
           message.textContent = "Try again!";
+          tries++;
+          updateStats();
         }
         return;
       }
@@ -185,20 +231,8 @@ window.onload = function() {
       t += 0.1;
       requestAnimationFrame(step);
     }
-
     step();
   }
-
-  function drawScene(a, b) {
-    drawGrid();
-    drawCannon();
-    drawTarget();
-    drawEquation(a,b);
-    drawParabola(a,b);
-  }
-
-  // Initial draw
-  drawScene(-0.1, 1);
 
   fireBtn.onclick = function() {
     let a = parseFloat(inputA.value);
@@ -214,6 +248,17 @@ window.onload = function() {
     message.textContent = "";
     animateProjectile(a,b);
   };
+
+  resetBtn.onclick = function() {
+    randomTarget();
+    message.textContent = "New target!";
+    drawScene(parseFloat(inputA.value), parseFloat(inputB.value));
+  };
+
+  // Initialize game
+  randomTarget();
+  drawScene(-0.1, 1);
+  updateStats();
 };
 </script>
 </head>
@@ -228,11 +273,20 @@ window.onload = function() {
         <p>Welcome to QuickBrain!</p>
 
         <div id="controls">
-  		<label>a: <input type="number" step="0.1" id="aInput" value="-0.1"></label>
-  		<label>b: <input type="number" step="0.1" id="bInput" value="1"></label>
-  		<button id="fireBtn">Fire!</button>
-  		<span id="message"></span>
+			<label>a: <input type="number" step="0.1" id="aInput" value="-0.1"></label>
+ 			<label>b: <input type="number" step="0.1" id="bInput" value="1"></label>
+ 	 		<button id="fireBtn">Fire!</button>
+  			<button id="resetBtn">Reset Target</button>
+	  		<span id="message"></span>
 		</div>
+
+		<div id="stats">
+  			<strong>Score:</strong> <span id="score">0</span> |
+  			<strong>Tries:</strong> <span id="tries">0</span> |
+  			<strong>Successes:</strong> <span id="successes">0</span> |
+  			<strong>Success Rate:</strong> <span id="rate">0%</span>
+		</div>
+		
 		<canvas id="gameCanvas" width="600" height="400"></canvas>
 
         <div class="info-grid">
